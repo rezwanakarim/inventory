@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customer Orders</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Customer Orders</h1>
+    <div class="container">
+        <h2>Filter Orders</h2>
+        <div>
+            <label for="order-customer-filter">Customer:</label>
+            <select id="order-customer-filter">
+                <option value="">All</option>
+            </select>
+        </div>
+        <div>
+            <label for="start-date">Start Date:</label>
+            <input type="date" id="start-date">
+        </div>
+        <div>
+            <label for="end-date">End Date:</label>
+            <input type="date" id="end-date">
+        </div>
+        <button id="filter-orders-button">Filter Orders</button>
+        <button id="export-customer-orders">Export Customer Orders</button>
+
+        <h2>Order List</h2>
+        <div id="order-list"></div>
+    </div>
+    <script src="orders.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+</body>
+</html>

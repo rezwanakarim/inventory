@@ -1,0 +1,150 @@
+body {
+    font-family: Arial, sans-serif;
+}
+
+.container {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+h1, h2 {
+    text-align: center;
+}
+
+form {
+    margin-bottom: 20px;
+}
+
+form input, form select, form button {
+    margin-right: 10px;
+    padding: 5px;
+}
+
+.product, .customer, .cart-item {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
+button {
+    cursor: pointer;
+}
+
+button.remove, button.add-to-cart, button.remove-from-cart {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+button.add-to-cart {
+    background-color: green;
+}
+
+button.remove-from-cart {
+    background-color: orange;
+}
+
+/* Add styles for the new sections */
+#tag-list, #type-list {
+    margin-bottom: 20px;
+}
+
+.tag, .type, .order {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+button.remove {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+button.add-to-cart {
+    background-color: green;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+button.remove-from-cart {
+    background-color: orange;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+}
+
+/* Add styles for the orders page */
+#order-list {
+    margin-top: 20px;
+}
+
+.order {
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+/* Add styles for date filters */
+input[type="date"] {
+    margin-right: 10px;
+}
+
+/* Add styles for the remove button */
+button.remove-order {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Styling for orders section */
+.order {
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.order h4 {
+    margin-top: 10px;
+}
+
+/* Add styles for the remove button */
+button.remove-order {
+    background-color: red;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+/* Styling for orders section */
+.order {
+    margin-bottom: 20px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+.order h4 {
+    margin-top: 10px;
+}
+
+

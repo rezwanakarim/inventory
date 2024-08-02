@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventory System</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <h1>Inventory System</h1>
+    <div class="container">
+        <h2>Add Tag</h2>
+        <form id="tag-form">
+            <input type="text" id="tag-name" placeholder="Tag Name" required>
+            <button type="submit">Add Tag</button>
+        </form>
+        <div id="tag-list"></div>
+
+        <h2>Add Type</h2>
+        <form id="type-form">
+            <input type="text" id="type-name" placeholder="Type Name" required>
+            <button type="submit">Add Type</button>
+        </form>
+        <div id="type-list"></div>
+
+        <h2>Add Product</h2>
+        <form id="inventory-form">
+            <input type="text" id="product-name" placeholder="Product Name" required>
+            <input type="number" id="product-quantity" placeholder="Quantity" required>
+            <select id="product-tags" required></select>
+            <select id="product-type" required></select>
+            <button type="submit">Add Product</button>
+        </form>
+
+        <h2>Filter Products</h2>
+        <input type="text" id="filter-product-name" placeholder="Product Name">
+        <select id="filter-tags"></select>
+        <select id="filter-types"></select>
+
+        <h2>Product List</h2>
+        <div id="inventory-list"></div>
+
+        <h2>Add Customer</h2>
+        <form id="customer-form">
+            <input type="text" id="customer-name" placeholder="Name" required>
+            <input type="text" id="customer-address" placeholder="Address" required>
+            <input type="text" id="customer-mobile" placeholder="Mobile Number" required>
+            <button type="submit">Add Customer</button>
+        </form>
+
+        <h2>Customer List</h2>
+        <div id="customer-list"></div>
+
+        <h2>Cart</h2>
+        <div id="cart-list"></div>
+        <div>
+            <label for="order-date">Order Date:</label>
+            <input type="date" id="order-date" required>
+        </div>
+        <button id="checkout-button">Checkout</button>
+        
+        <h2>Customer Orders</h2>
+        <!-- <div id="customer-orders-list"></div> -->
+        <h2><a href="orders.html">View Orders</a></h2>
+
+        <button id="export-inventory">Export Inventory</button>
+
+<button id="export-customers">Export Customers</button>
+
+
+    </div>
+    <script src="script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>
+
+</body>
+</html>
