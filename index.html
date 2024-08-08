@@ -37,8 +37,21 @@
         <select id="filter-tags"></select>
         <select id="filter-types"></select>
 
-        <h2>Product List</h2>
-        <div id="inventory-list"></div>
+
+        <h2>Product List</h2>    
+        <table id="inventory-table">
+            <thead>
+                <tr>
+                    <th>Product Name</th>
+                    <th>Quantity</th>
+                    <th>Type</th>
+                    <th>Tags</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="inventory-list"></tbody>
+        </table>
+        
 
         <h2>Add Customer</h2>
         <form id="customer-form">
@@ -49,15 +62,32 @@
         </form>
 
         <h2>Customer List</h2>
-        <div id="customer-list"></div>
+        <table id="customer-table">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Address</th>
+                    <th>Contact</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="customer-list"></tbody>
+        </table>
 
         <h2>Cart</h2>
         <div id="cart-list"></div>
-        <div>
+        <form id="checkout-form">
             <label for="order-date">Order Date:</label>
             <input type="date" id="order-date" required>
-        </div>
-        <button id="checkout-button">Checkout</button>
+            
+            <label for="customer-select">Select Customer:</label>
+            <select id="customer-select" required>
+                <!-- Options will be populated by JavaScript -->
+            </select>
+            
+            <button type="button" id="checkout-button">Checkout</button>
+        </form>
+        
         
         <h2>Customer Orders</h2>
         <!-- <div id="customer-orders-list"></div> -->

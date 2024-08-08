@@ -16,10 +16,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const typeList = document.getElementById('type-list');
     const customerOrdersList = document.getElementById('customer-orders-list');
     const orderDateInput = document.getElementById('order-date');
+
     document.getElementById('export-inventory').addEventListener('click', exportInventoryToExcel);
-
-document.getElementById('export-customers').addEventListener('click', exportCustomersToExcel);
-
+    document.getElementById('export-customers').addEventListener('click', exportCustomersToExcel);
 
     let cart = [];
 
@@ -113,6 +112,47 @@ document.getElementById('export-customers').addEventListener('click', exportCust
                 addToCart(index, quantity);
             }
         }
+    }
+
+    function displayInventory(filterTag = '', filterType = '', filterName = '') {
+        inventoryList.innerHTML = ''; // Clear existing content
+        let inventory = getInventory();
+        inventory = inventory.filter(product =>
+            (filterTag === '' || product.tags.includes(filterTag)) &&
+            (filterType === '' || product.type === filterType) &&
+            (filterName === '' || product.name.toLowerCase().includes(filterName.toLowerCase()))
+        );
+
+        inventory.forEach((product, index) => {
+            const row = document.createElement('tr'); // Create a table row
+
+            // Create and append individual table data cells
+            const nameCell = document.createElement('td');
+            nameCell.textContent = product.name;
+            row.appendChild(nameCell);
+
+            const quantityCell = document.createElement('td');
+            quantityCell.textContent = product.quantity;
+            row.appendChild(quantityCell);
+
+            const typeCell = document.createElement('td');
+            typeCell.textContent = product.type;
+            row.appendChild(typeCell);
+
+            const tagsCell = document.createElement('td');
+            tagsCell.textContent = product.tags.join(', ');
+            row.appendChild(tagsCell);
+
+            const actionsCell = document.createElement('td');
+            actionsCell.innerHTML = `
+                <button class="add-to-cart" data-index="${index}">Add to Cart</button>
+                <button class="remove" data-index="${index}">Remove</button>
+            `;
+            row.appendChild(actionsCell);
+
+            // Append the row to the table body
+            inventoryList.appendChild(row);
+        });
     }
 
     function addCustomer(e) {
@@ -263,42 +303,151 @@ document.getElementById('export-customers').addEventListener('click', exportCust
         localStorage.setItem('inventory', JSON.stringify(inventory));
     }
 
-    function displayInventory(filterTag = '', filterType = '', filterName = '') {
-        inventoryList.innerHTML = '';
-        let inventory = getInventory();
-        inventory = inventory.filter(product => 
-            (filterTag === '' || product.tags.includes(filterTag)) &&
-            (filterType === '' || product.type === filterType) &&
-            (filterName === '' || product.name.toLowerCase().includes(filterName))
-        );
+    function getCustomers() {
+        const customers = localStorage.getItem('customers');
+        return customers ? JSON.parse(customers) : [];
+    }
 
-        inventory.forEach((product, index) => {
-            const div = document.createElement('div');
-            div.className = 'product';
-            div.innerHTML = `
-                <span>${product.name} - Quantity: ${product.quantity} - Type: ${product.type} - Tags: ${product.tags.join(', ')}</span>
-                <button class="add-to-cart" data-index="${index}">Add to Cart</button>
-                <button class="remove" data-index="${index}">Remove</button>
-            `;
-            inventoryList.appendChild(div);
-        });
+    function saveCustomers(customers) {
+        localStorage.setItem('customers', JSON.stringify(customers));
     }
 
     function addToCart(index, quantity) {
         let inventory = getInventory();
-        const product = inventory[index];
-        const cartItem = cart.find(item => item.name === product.name && item.type === product.type && item.tags.every(tag => product.tags.includes(tag)) && item.tags.length === product.tags.length);
-
-        if (cartItem) {
-            cartItem.quantity += quantity;
-        } else {
+        let product = inventory[index];
+        if (product.quantity >= quantity) {
             cart.push({ ...product, quantity });
+            product.quantity -= quantity;
+            saveInventory(inventory);
+            displayCart();
+            displayInventory();
+        } else {
+            alert('Not enough quantity available.');
         }
-        displayCart();
     }
 
     function displayCart() {
         cartList.innerHTML = '';
+        cart.forEach((item, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${item.name}</td>
+                <td>${item.quantity}</td>
+                <td>
+                    <button class="remove-from-cart" data-index="${index}">Remove</button>
+                </td>
+            `;
+            cartList.appendChild(row);
+        });
+    }
+
+    function checkout() {
+        const date = orderDateInput.value;
+        const customerIndex = document.getElementById('customer-select').value;
+    
+        if (!date) {
+            alert('Please select a date.');
+            return;
+        }
+        
+        if (customerIndex === '') {
+            alert('Please select a customer.');
+            return;
+        }
+    
+        const customers = getCustomers();
+        const selectedCustomer = customers[customerIndex];
+        if (!selectedCustomer) {
+            alert('Selected customer not found.');
+            return;
+        }
+    
+        const orders = cart.map(item => ({
+            ...item,
+            date
+        }));
+    
+        selectedCustomer.orders = selectedCustomer.orders || [];
+        selectedCustomer.orders.push(...orders);
+        saveCustomers(customers);
+        
+        cart = [];
+        saveInventory(getInventory()); // Update inventory with remaining quantities
+        displayCart();
+        displayCustomerOrders();
+    }
+    
+
+    // function checkout() {
+    //     const date = orderDateInput.value;
+    //     if (!date) {
+    //         alert('Please select a date.');
+    //         return;
+    //     }
+
+    //     const orders = cart.map(item => ({
+    //         ...item,
+    //         date
+    //     }));
+
+    //     let customers = getCustomers();
+    //     customers.forEach(customer => {
+    //         customer.orders = customer.orders || [];
+    //         customer.orders.push(...orders);
+    //     });
+    //     saveCustomers(customers);
+    //     cart = [];
+    //     saveInventory(getInventory()); // Update inventory with remaining quantities
+    //     displayCart();
+    //     displayCustomerOrders();
+    // }
+
+    // function displayCustomers() {
+    //     customerList.innerHTML = '';
+    //     let customers = getCustomers();
+    //     customers.forEach((customer, index) => {
+    //         const row = document.createElement('tr');
+    //         row.innerHTML = `
+    //             <td>${customer.name}</td>
+    //             <td>${customer.address}</td>
+    //             <td>${customer.mobile}</td>
+    //             <td>
+    //                 <button class="remove" data-index="${index}">Remove</button>
+    //             </td>
+    //         `;
+    //         customerList.appendChild(row);
+    //     });
+    // }
+
+    function displayCustomers() {
+        customerList.innerHTML = '';
+        const customerSelect = document.getElementById('customer-select');
+        customerSelect.innerHTML = '<option value="">Select a customer</option>';
+        
+        let customers = getCustomers();
+        customers.forEach((customer, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${customer.name}</td>
+                <td>${customer.address}</td>
+                <td>${customer.mobile}</td>
+                <td>
+                    <button class="remove" data-index="${index}">Remove</button>
+                </td>
+            `;
+            customerList.appendChild(row);
+            
+            const option = document.createElement('option');
+            option.value = index;
+            option.textContent = customer.name;
+            customerSelect.appendChild(option);
+        });
+    }
+
+    function displayCart() {
+        const cartList = document.getElementById('cart-list');
+        cartList.innerHTML = ''; // Clear existing content
+    
         cart.forEach((item, index) => {
             const div = document.createElement('div');
             div.className = 'cart-item';
@@ -309,114 +458,63 @@ document.getElementById('export-customers').addEventListener('click', exportCust
             cartList.appendChild(div);
         });
     }
-
-    function getCustomers() {
-        const customers = localStorage.getItem('customers');
-        return customers ? JSON.parse(customers) : [];
-    }
-
-    function saveCustomers(customers) {
-        localStorage.setItem('customers', JSON.stringify(customers));
-    }
-
-    function displayCustomers() {
-        customerList.innerHTML = '';
-        let customers = getCustomers();
-        customers.forEach((customer, index) => {
-            const div = document.createElement('div');
-            div.className = 'customer';
-            div.innerHTML = `
-                <span>${customer.name} - Address: ${customer.address} - Mobile: ${customer.mobile}</span>
-                <button class="remove" data-index="${index}">Remove</button>
-            `;
-            customerList.appendChild(div);
-        });
-    }
-
-    function checkout() {
-        const customerName = prompt('Enter customer name:');
-        const customers = getCustomers();
-        const customer = customers.find(c => c.name === customerName);
-
-        if (!customer) {
-            alert('Customer not found');
-            return;
-        }
-
-        const orderDate = orderDateInput.value || new Date().toISOString().split('T')[0];
-
-        const order = {
-            date: orderDate,
-            customer,
-            items: cart
-        };
-
-        let orders = getCustomerOrders();
-        orders.push(order);
-        saveCustomerOrders(orders);
-
-        let inventory = getInventory();
-        cart.forEach(cartItem => {
-            let product = inventory.find(p => p.name === cartItem.name && p.type === cartItem.type && p.tags.every(tag => cartItem.tags.includes(tag)) && p.tags.length === cartItem.tags.length);
-            if (product) {
-                product.quantity -= cartItem.quantity;
-            }
-        });
-        saveInventory(inventory);
-
-        cart = [];
-        displayCart();
-        displayInventory();
-        displayCustomerOrders();
-        alert('Order placed successfully! Check the Customer Orders section for details.');
-    }
-
-    function getCustomerOrders() {
-        const orders = localStorage.getItem('customerOrders');
-        return orders ? JSON.parse(orders) : [];
-    }
-
-    function saveCustomerOrders(orders) {
-        localStorage.setItem('customerOrders', JSON.stringify(orders));
-    }
+    
+    
 
     function displayCustomerOrders() {
         customerOrdersList.innerHTML = '';
-        let orders = getCustomerOrders();
-        orders.forEach(order => {
-            const div = document.createElement('div');
-            div.className = 'order';
-            div.innerHTML = `
-                <h3>Order Date: ${order.date}</h3>
-                <h4>Customer: ${order.customer.name}</h4>
-                <p>Address: ${order.customer.address}</p>
-                <p>Mobile: ${order.customer.mobile}</p>
-                <h4>Items:</h4>
-                <ul>
-                    ${order.items.map(item => `<li>${item.name} - Quantity: ${item.quantity} - Type: ${item.type} - Tags: ${item.tags.join(', ')}</li>`).join('')}
-                </ul>
-            `;
-            customerOrdersList.appendChild(div);
+        let customers = getCustomers();
+        customers.forEach(customer => {
+            if (customer.orders) {
+                customer.orders.forEach(order => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${customer.name}</td>
+                        <td>${order.name}</td>
+                        <td>${order.quantity}</td>
+                        <td>${order.date}</td>
+                    `;
+                    customerOrdersList.appendChild(row);
+                });
+            }
         });
     }
 
-    function exportToExcel(data, filename) {
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-        XLSX.writeFile(workbook, filename);
-    }
-    
     function exportInventoryToExcel() {
         const inventory = getInventory();
-        exportToExcel(inventory, 'inventory.xlsx');
+        const csvContent = "data:text/csv;charset=utf-8,"
+            + ["Product Name,Quantity,Type,Tags"]
+            .concat(inventory.map(product =>
+                [product.name, product.quantity, product.type, product.tags.join(', ')].join(',')
+            ))
+            .join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "inventory.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
-    
-    
-    
+
     function exportCustomersToExcel() {
         const customers = getCustomers();
-        exportToExcel(customers, 'customers.xlsx');
+        const csvContent = "data:text/csv;charset=utf-8,"
+            + ["Customer Name,Address,Mobile,Orders"]
+            .concat(customers.map(customer => {
+                const orders = customer.orders ? customer.orders.map(order =>
+                    `[${order.name}: ${order.quantity} on ${order.date}]`).join(' | ') : '';
+                return [customer.name, customer.address, customer.mobile, orders].join(',');
+            }))
+            .join("\n");
+
+        const encodedUri = encodeURI(csvContent);
+        const link = document.createElement("a");
+        link.setAttribute("href", encodedUri);
+        link.setAttribute("download", "customers.csv");
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
-    
 });
