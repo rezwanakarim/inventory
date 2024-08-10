@@ -1,112 +1,194 @@
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', () => {
     const orderCustomerFilter = document.getElementById('order-customer-filter');
     const startDateInput = document.getElementById('start-date');
     const endDateInput = document.getElementById('end-date');
     const filterOrdersButton = document.getElementById('filter-orders-button');
-    const orderList = document.getElementById('order-list');
-    document.getElementById('export-customer-orders').addEventListener('click', exportCustomerOrdersToExcel);
+    const exportCustomerOrders = document.getElementById('export-customer-orders');
+    const customerOrdersList = document.getElementById('order-list');
 
-    function getCustomerOrders() {
-        const orders = localStorage.getItem('customerOrders');
-        return orders ? JSON.parse(orders) : [];
+    function getOrders() {
+        try {
+            const orders = localStorage.getItem('orders');
+            if (!orders) {
+                console.warn('No orders found in localStorage');
+                return [];
+            }
+            return JSON.parse(orders);
+        } catch (error) {
+            console.error('Error parsing orders from localStorage:', error);
+            return [];
+        }
     }
 
-    function saveCustomerOrders(orders) {
-        localStorage.setItem('customerOrders', JSON.stringify(orders));
-    }
-
-    function displayOrders(filterCustomer = '', startDate = '', endDate = '') {
-        orderList.innerHTML = '';
-        let orders = getCustomerOrders();
-
-        if (filterCustomer) {
-            orders = orders.filter(order => order.customer.name === filterCustomer);
+    function getCustomers() {
+        try {
+            const customers = localStorage.getItem('customers');
+            if (!customers) {
+                console.warn('No customers found in localStorage');
+                return [];
+            }
+            return JSON.parse(customers);
+        } catch (error) {
+            console.error('Error parsing customers from localStorage:', error);
+            return [];
         }
-
-        if (startDate) {
-            orders = orders.filter(order => new Date(order.date) >= new Date(startDate));
-        }
-
-        if (endDate) {
-            orders = orders.filter(order => new Date(order.date) <= new Date(endDate));
-        }
-
-        orders.forEach((order, index) => {
-            const totalQuantity = order.items.reduce((sum, item) => sum + item.quantity, 0);
-            const div = document.createElement('div');
-            div.className = 'order';
-            div.innerHTML = `
-                <h3>Order Date: ${order.date}</h3>
-                <h4>Customer Information</h4>
-                <p>Name: ${order.customer.name}</p>
-                <p>Address: ${order.customer.address}</p>
-                <p>Mobile: ${order.customer.mobile}</p>
-                <p>Total Quantity: ${totalQuantity}</p>
-                <h4>Items:</h4>
-                <ul>
-                    ${order.items.map(item => `<li>${item.name} - Quantity: ${item.quantity} - Type: ${item.type} - Tags: ${item.tags.join(', ')}</li>`).join('')}
-                </ul>
-                <button class="remove-order" data-index="${index}">Remove Order</button>
-            `;
-            orderList.appendChild(div);
-        });
-
-        // Add event listeners for the remove buttons
-        document.querySelectorAll('.remove-order').forEach(button => {
-            button.addEventListener('click', function() {
-                const index = this.getAttribute('data-index');
-                removeOrder(index);
-            });
-        });
     }
 
     function populateCustomerFilter() {
-        const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+        const customers = getCustomers();
+        if (!customers.length) {
+            console.warn('No customers available to populate filter');
+        }
+        const customerNames = Array.from(new Set(customers.map(customer => customer.name)));
         orderCustomerFilter.innerHTML = '<option value="">All</option>';
-        customers.forEach(customer => {
+        customerNames.forEach(name => {
             const option = document.createElement('option');
-            option.value = customer.name;
-            option.textContent = customer.name;
+            option.value = name;
+            option.textContent = name;
             orderCustomerFilter.appendChild(option);
         });
     }
 
-    function removeOrder(index) {
-        let orders = getCustomerOrders();
-        orders.splice(index, 1);
-        saveCustomerOrders(orders);
-        displayOrders(orderCustomerFilter.value, startDateInput.value, endDateInput.value);
+    function displayOrders() {
+        const orders = getOrders();
+        console.log('Retrieved Orders:', orders);
+
+        const customerName = orderCustomerFilter.value;
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+
+        const filteredOrders = orders.filter(order => {
+            const orderDate = new Date(order.date);
+            const matchesCustomer = !customerName || order.customer.name === customerName;
+            const matchesStartDate = isNaN(startDate) || orderDate >= startDate;
+            const matchesEndDate = isNaN(endDate) || orderDate <= endDate;
+            return matchesCustomer && matchesStartDate && matchesEndDate;
+        });
+
+        console.log('Filtered Orders:', filteredOrders);
+
+        customerOrdersList.innerHTML = '';
+        filteredOrders.forEach((order, index) => {
+            const totalQuantity = order.items.reduce((total, item) => total + item.quantity, 0);
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${order.customer.name}</td>
+                <td>${totalQuantity}</td>
+                <td>${order.date}</td>
+                <td>
+                    <button class="remove-order" data-index="${index}">Remove</button>
+                    <button class="details-order" data-index="${index}">Details</button>
+                </td>
+            `;
+            customerOrdersList.appendChild(row);
+        });
+
+        document.querySelectorAll('.remove-order').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const index = e.target.dataset.index;
+                removeOrder(index);
+            });
+        });
+
+        document.querySelectorAll('.details-order').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const index = e.target.dataset.index;
+                showOrderDetails(index);
+            });
+        });
     }
 
-    filterOrdersButton.addEventListener('click', () => {
-        const selectedCustomer = orderCustomerFilter.value;
-        const startDate = startDateInput.value;
-        const endDate = endDateInput.value;
-        displayOrders(selectedCustomer, startDate, endDate);
-    });
+    function removeOrder(index) {
+        try {
+            const orders = getOrders();
+            if (index < 0 || index >= orders.length) {
+                console.error('Invalid order index');
+                return;
+            }
+            orders.splice(index, 1);
+            localStorage.setItem('orders', JSON.stringify(orders));
+            displayOrders();
+        } catch (error) {
+            console.error('Error removing order:', error);
+        }
+    }
 
-    populateCustomerFilter();
-    displayOrders();
+    // Function to show order details
+    function showOrderDetails(index) {
+        const orders = getOrders();
+        if (index < 0 || index >= orders.length) {
+            console.error('Invalid order index');
+            return;
+        }
+        const order = orders[index];
+        const customer = order.customer;
+
+        // Calculate total quantity
+        const totalQuantity = order.items.reduce((total, item) => total + item.quantity, 0);
+
+        // Construct order details
+        const orderDetails = `
+            Customer Details:
+            Name: ${customer.name}
+            Address: ${customer.address}
+            Contact: ${customer.mobile}
+
+            Order Date: ${order.date}
+            Total Quantity: ${totalQuantity}
+            Items:
+            ${order.items.map(item => `${item.name}: ${item.quantity}`).join('\n')}
+        `;
+
+        // Display order details
+        const orderDetailsContent = document.getElementById('order-details-content');
+        orderDetailsContent.textContent = orderDetails;
+
+        const orderDetailsSection = document.getElementById('order-details');
+        orderDetailsSection.style.display = 'block';
+    }
 
     function exportToExcel(data, filename) {
-        const worksheet = XLSX.utils.json_to_sheet(data);
-        const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Sheet1');
-        XLSX.writeFile(workbook, filename);
+        try {
+            const worksheet = XLSX.utils.json_to_sheet(data);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Orders');
+            XLSX.writeFile(workbook, filename);
+        } catch (error) {
+            console.error('Error exporting to Excel:', error);
+        }
     }
 
     function exportCustomerOrdersToExcel() {
-        const orders = getCustomerOrders();
-        const formattedOrders = orders.map(order => {
-            return {
-                'Order Date': order.date,
-                'Customer Name': order.customer.name,
-                'Customer Address': order.customer.address,
-                'Customer Mobile': order.customer.mobile,
-                'Items': order.items.map(item => `${item.name} - Quantity: ${item.quantity} - Type: ${item.type} - Tags: ${item.tags.join(', ')}`).join('; ')
-            };
+        const orders = getOrders();
+        const customerName = orderCustomerFilter.value;
+        const startDate = new Date(startDateInput.value);
+        const endDate = new Date(endDateInput.value);
+
+        const filteredOrders = orders.filter(order => {
+            const orderDate = new Date(order.date);
+            const matchesCustomer = !customerName || order.customer.name === customerName;
+            const matchesStartDate = isNaN(startDate) || orderDate >= startDate;
+            const matchesEndDate = isNaN(endDate) || orderDate <= endDate;
+            return matchesCustomer && matchesStartDate && matchesEndDate;
         });
+
+        const formattedOrders = filteredOrders.map(order => ({
+            'Order Date': order.date,
+            'Customer Name': order.customer.name,
+            'Items': order.items.map(item => `${item.name} (Qty: ${item.quantity})`).join('; ')
+        }));
+
         exportToExcel(formattedOrders, 'customer_orders.xlsx');
     }
-    
+
+    function initialize() {
+        populateCustomerFilter();
+        displayOrders();
+    }
+
+    filterOrdersButton.addEventListener('click', displayOrders);
+    exportCustomerOrders.addEventListener('click', exportCustomerOrdersToExcel);
+
+    initialize();
 });
+

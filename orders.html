@@ -16,11 +16,10 @@
                 <option value="">All</option>
             </select>
         </div>
-        <div>
+        <div >
             <label for="start-date">Start Date:</label>
             <input type="date" id="start-date">
-        </div>
-        <div>
+    
             <label for="end-date">End Date:</label>
             <input type="date" id="end-date">
         </div>
@@ -31,7 +30,6 @@
             <thead>
                 <tr>
                     <th>Customer Name</th>
-                    <th>Order Name</th>
                     <th>Quantity</th>
                     <th>Date</th>
                     <th>Action</th>
@@ -39,6 +37,11 @@
             </thead>
             <tbody id="order-list"></tbody>
         </table>
+
+        <div id="order-details" style="display:none;">
+            <h2>Order Details</h2>
+            <pre id="order-details-content"></pre>
+        </div>
     </div>
     <script src="orders.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.17.0/xlsx.full.min.js"></script>

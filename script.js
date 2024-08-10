@@ -14,8 +14,9 @@ document.addEventListener('DOMContentLoaded', function () {
     const checkoutButton = document.getElementById('checkout-button');
     const tagList = document.getElementById('tag-list');
     const typeList = document.getElementById('type-list');
-    const customerOrdersList = document.getElementById('customer-orders-list');
+    const customerOrdersList = document.getElementById('order-list');
     const orderDateInput = document.getElementById('order-date');
+    const customerSelect = document.getElementById('customer-select');
 
     document.getElementById('export-inventory').addEventListener('click', exportInventoryToExcel);
     document.getElementById('export-customers').addEventListener('click', exportCustomersToExcel);
@@ -34,7 +35,7 @@ document.addEventListener('DOMContentLoaded', function () {
     filterTypes.addEventListener('change', filterProducts);
     filterProductName.addEventListener('input', filterProducts);
     checkoutButton.addEventListener('click', checkout);
-   
+
     displayTags();
     displayTypes();
     displayFilterTags();
@@ -164,7 +165,8 @@ document.addEventListener('DOMContentLoaded', function () {
         const customer = {
             name,
             address,
-            mobile
+            mobile,
+            orders: [] // Initialize orders array
         };
 
         let customers = getCustomers();
@@ -184,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function () {
             displayCustomers();
         }
     }
-   
+
     function removeTag(e) {
         if (e.target.classList.contains('remove-tag')) {  // Check for 'remove-tag' class
             const index = e.target.getAttribute('data-index');
@@ -195,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function () {
             displayFilterTags();
         }
     }
-    
+
     function removeType(e) {
         if (e.target.classList.contains('remove-type')) {  // Check for 'remove-type' class
             const index = e.target.getAttribute('data-index');
@@ -206,7 +208,7 @@ document.addEventListener('DOMContentLoaded', function () {
             displayFilterTypes();
         }
     }
-    
+
     function filterProducts() {
         const selectedTag = filterTags.value;
         const selectedType = filterTypes.value;
@@ -226,9 +228,9 @@ document.addEventListener('DOMContentLoaded', function () {
     function displayTags() {
         tagSelect.innerHTML = ''; // Clear previous options
         tagList.innerHTML = ''; // Clear the tag list display
-    
+
         let tags = getTags(); // Fetch tags from localStorage or another source
-    
+
         // Populate the tagSelect with options
         tags.forEach(tag => {
             const option = document.createElement('option');
@@ -236,12 +238,12 @@ document.addEventListener('DOMContentLoaded', function () {
             option.textContent = tag;
             tagSelect.appendChild(option);
         });
-    
+
         // Populate the tagList with tags and remove buttons
         tags.forEach((tag, index) => {
             const div = document.createElement('div');
             div.className = 'tag';
-    
+
             div.innerHTML = `
                 <span class="tag-text">${tag}</span>
                 <button class="remove-tag" data-index="${index}">&times;</button> <!-- Use 'remove-tag' class -->
@@ -249,13 +251,13 @@ document.addEventListener('DOMContentLoaded', function () {
             tagList.appendChild(div);
         });
     }
-    
+
     function displayTypes() {
         typeSelect.innerHTML = ''; // Clear previous options
         typeList.innerHTML = ''; // Clear the type list display
-    
+
         let types = getTypes(); // Fetch types from localStorage or another source
-    
+
         // Populate the typeSelect with options
         types.forEach(type => {
             const option = document.createElement('option');
@@ -263,12 +265,12 @@ document.addEventListener('DOMContentLoaded', function () {
             option.textContent = type;
             typeSelect.appendChild(option);
         });
-    
+
         // Populate the typeList with types and remove buttons
         types.forEach((type, index) => {
             const div = document.createElement('div');
             div.className = 'type';
-    
+
             div.innerHTML = `
                 <span class="type-text">${type}</span>
                 <button class="remove-type" data-index="${index}">&times;</button> <!-- Use 'remove-type' class -->
@@ -276,7 +278,6 @@ document.addEventListener('DOMContentLoaded', function () {
             typeList.appendChild(div);
         });
     }
-    
 
     function displayFilterTags() {
         filterTags.innerHTML = '<option value="">All</option>';
@@ -297,7 +298,6 @@ document.addEventListener('DOMContentLoaded', function () {
     function saveTypes(types) {
         localStorage.setItem('types', JSON.stringify(types));
     }
-
 
     function displayFilterTypes() {
         filterTypes.innerHTML = '<option value="">All</option>';
@@ -343,9 +343,8 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function displayCart() {
-        const cartList = document.getElementById('cart-list');
         cartList.innerHTML = ''; // Clear existing content
-    
+
         cart.forEach((item, index) => {
             const div = document.createElement('div');
             div.className = 'cart-item';
@@ -357,47 +356,54 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+
     function checkout() {
-        const date = orderDateInput.value;
-        const customerIndex = document.getElementById('customer-select').value;
-    
-        if (!date) {
-            alert('Please select a date.');
-            return;
-        }
-        
-        if (customerIndex === '') {
-            alert('Please select a customer.');
-            return;
-        }
-    
-        const customers = getCustomers();
-        const selectedCustomer = customers[customerIndex];
-        if (!selectedCustomer) {
-            alert('Selected customer not found.');
-            return;
-        }
-    
-        const orders = cart.map(item => ({
-            ...item,
-            date
-        }));
-    
-        selectedCustomer.orders = selectedCustomer.orders || [];
-        selectedCustomer.orders.push(...orders);
-        saveCustomers(customers);
-        
-        cart = [];
-        saveInventory(getInventory()); // Update inventory with remaining quantities
-        displayCart();
-        displayCustomerOrders();
+    const date = orderDateInput.value;
+    const customerIndex = customerSelect.value;
+
+    if (!date) {
+        alert('Please select a date.');
+        return;
     }
+
+    if (customerIndex === '') {
+        alert('Please select a customer.');
+        return;
+    }
+
+    const customers = getCustomers();
+    const selectedCustomer = customers[customerIndex];
+    if (!selectedCustomer) {
+        alert('Selected customer not found.');
+        return;
+    }
+
+    const order = {
+        customer: selectedCustomer,
+        items: cart.map(item => ({
+            name: item.name,
+            quantity: item.quantity
+        })),
+        date: date
+    };
+
+    // Get existing orders or create a new array
+    const existingOrders = JSON.parse(localStorage.getItem('orders')) || [];
+    existingOrders.push(order);
+    localStorage.setItem('orders', JSON.stringify(existingOrders));
+
+    cart = [];
+    saveInventory(getInventory()); // Update inventory with remaining quantities
+    displayCart();
+    displayCustomerOrders();
+}
+
     
+
     function displayCustomers() {
         customerList.innerHTML = '';
-        const customerSelect = document.getElementById('customer-select');
         customerSelect.innerHTML = '<option value="">Select a customer</option>';
-        
+
         let customers = getCustomers();
         customers.forEach((customer, index) => {
             const row = document.createElement('tr');
@@ -410,7 +416,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 </td>
             `;
             customerList.appendChild(row);
-            
+
             const option = document.createElement('option');
             option.value = index;
             option.textContent = customer.name;
@@ -436,7 +442,73 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-
+    
+    function displayCustomerOrders() {
+        const customerOrdersList = document.getElementById('order-list'); // Make sure this element exists in your HTML
+        if (!customerOrdersList) {
+            console.error('Element with ID "order-list" not found.');
+            return;
+        }
+        
+        customerOrdersList.innerHTML = '';
+        let customers = getCustomers();
+        
+        customers.forEach(customer => {
+            if (customer.orders) {
+                customer.orders.forEach((order, orderIndex) => {
+                    const row = document.createElement('tr');
+                    const totalQuantity = order.quantity; // Assuming order has a quantity property
+    
+                    row.innerHTML = `
+                        <td>${customer.name}</td>
+                        <td>${totalQuantity}</td>
+                        <td>${order.date}</td>
+                        <td>
+                            <button class="remove-order" data-customer-index="${customers.indexOf(customer)}" data-order-index="${orderIndex}">Remove</button>
+                            <button class="details-order" data-customer-index="${customers.indexOf(customer)}" data-order-index="${orderIndex}">Details</button>
+                        </td>
+                    `;
+    
+                    customerOrdersList.appendChild(row);
+                });
+            }
+        });
+    
+        // Add event listeners for the buttons
+        document.querySelectorAll('.remove-order').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const customerIndex = e.target.dataset.customerIndex;
+                const orderIndex = e.target.dataset.orderIndex;
+                removeOrder(customerIndex, orderIndex);
+            });
+        });
+    
+        document.querySelectorAll('.details-order').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const customerIndex = e.target.dataset.customerIndex;
+                const orderIndex = e.target.dataset.orderIndex;
+                showOrderDetails(customerIndex, orderIndex);
+            });
+        });
+    }
+    
+    // Function to remove an order
+    function removeOrder(customerIndex, orderIndex) {
+        let customers = getCustomers();
+        if (customers[customerIndex].orders) {
+            customers[customerIndex].orders.splice(orderIndex, 1);
+            saveCustomers(customers); // Save the updated customers array
+            displayCustomerOrders(); // Refresh the order list display
+        }
+    }
+    
+    // Function to show order details
+    function showOrderDetails(customerIndex, orderIndex) {
+        let customers = getCustomers();
+        const order = customers[customerIndex].orders[orderIndex];
+        alert(`Order Details:\nCustomer: ${customers[customerIndex].name}\nDate: ${order.date}\nItems:\n${order.name}: ${order.quantity}`);
+    }
+    
     function exportInventoryToExcel() {
         const inventory = getInventory();
         const csvContent = "data:text/csv;charset=utf-8,"
