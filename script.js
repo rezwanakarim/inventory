@@ -34,7 +34,7 @@ document.addEventListener('DOMContentLoaded', function () {
     filterTypes.addEventListener('change', filterProducts);
     filterProductName.addEventListener('input', filterProducts);
     checkoutButton.addEventListener('click', checkout);
-
+   
     displayTags();
     displayTypes();
     displayFilterTags();
@@ -184,9 +184,9 @@ document.addEventListener('DOMContentLoaded', function () {
             displayCustomers();
         }
     }
-
+   
     function removeTag(e) {
-        if (e.target.classList.contains('remove')) {
+        if (e.target.classList.contains('remove-tag')) {  // Check for 'remove-tag' class
             const index = e.target.getAttribute('data-index');
             let tags = getTags();
             tags.splice(index, 1);
@@ -195,9 +195,9 @@ document.addEventListener('DOMContentLoaded', function () {
             displayFilterTags();
         }
     }
-
+    
     function removeType(e) {
-        if (e.target.classList.contains('remove')) {
+        if (e.target.classList.contains('remove-type')) {  // Check for 'remove-type' class
             const index = e.target.getAttribute('data-index');
             let types = getTypes();
             types.splice(index, 1);
@@ -206,7 +206,7 @@ document.addEventListener('DOMContentLoaded', function () {
             displayFilterTypes();
         }
     }
-
+    
     function filterProducts() {
         const selectedTag = filterTags.value;
         const selectedType = filterTypes.value;
@@ -224,24 +224,59 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function displayTags() {
-        tagSelect.innerHTML = '';
-        tagList.innerHTML = '';
-        let tags = getTags();
-        tags.forEach((tag, index) => {
+        tagSelect.innerHTML = ''; // Clear previous options
+        tagList.innerHTML = ''; // Clear the tag list display
+    
+        let tags = getTags(); // Fetch tags from localStorage or another source
+    
+        // Populate the tagSelect with options
+        tags.forEach(tag => {
             const option = document.createElement('option');
             option.value = tag;
             option.textContent = tag;
             tagSelect.appendChild(option);
-
+        });
+    
+        // Populate the tagList with tags and remove buttons
+        tags.forEach((tag, index) => {
             const div = document.createElement('div');
             div.className = 'tag';
+    
             div.innerHTML = `
-                <span>${tag}</span>
-                <button class="remove" data-index="${index}">Remove</button>
+                <span class="tag-text">${tag}</span>
+                <button class="remove-tag" data-index="${index}">&times;</button> <!-- Use 'remove-tag' class -->
             `;
             tagList.appendChild(div);
         });
     }
+    
+    function displayTypes() {
+        typeSelect.innerHTML = ''; // Clear previous options
+        typeList.innerHTML = ''; // Clear the type list display
+    
+        let types = getTypes(); // Fetch types from localStorage or another source
+    
+        // Populate the typeSelect with options
+        types.forEach(type => {
+            const option = document.createElement('option');
+            option.value = type;
+            option.textContent = type;
+            typeSelect.appendChild(option);
+        });
+    
+        // Populate the typeList with types and remove buttons
+        types.forEach((type, index) => {
+            const div = document.createElement('div');
+            div.className = 'type';
+    
+            div.innerHTML = `
+                <span class="type-text">${type}</span>
+                <button class="remove-type" data-index="${index}">&times;</button> <!-- Use 'remove-type' class -->
+            `;
+            typeList.appendChild(div);
+        });
+    }
+    
 
     function displayFilterTags() {
         filterTags.innerHTML = '<option value="">All</option>';
@@ -263,25 +298,6 @@ document.addEventListener('DOMContentLoaded', function () {
         localStorage.setItem('types', JSON.stringify(types));
     }
 
-    function displayTypes() {
-        typeSelect.innerHTML = '';
-        typeList.innerHTML = '';
-        let types = getTypes();
-        types.forEach((type, index) => {
-            const option = document.createElement('option');
-            option.value = type;
-            option.textContent = type;
-            typeSelect.appendChild(option);
-
-            const div = document.createElement('div');
-            div.className = 'type';
-            div.innerHTML = `
-                <span>${type}</span>
-                <button class="remove" data-index="${index}">Remove</button>
-            `;
-            typeList.appendChild(div);
-        });
-    }
 
     function displayFilterTypes() {
         filterTypes.innerHTML = '<option value="">All</option>';
@@ -327,17 +343,17 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function displayCart() {
-        cartList.innerHTML = '';
+        const cartList = document.getElementById('cart-list');
+        cartList.innerHTML = ''; // Clear existing content
+    
         cart.forEach((item, index) => {
-            const row = document.createElement('tr');
-            row.innerHTML = `
-                <td>${item.name}</td>
-                <td>${item.quantity}</td>
-                <td>
-                    <button class="remove-from-cart" data-index="${index}">Remove</button>
-                </td>
+            const div = document.createElement('div');
+            div.className = 'cart-item';
+            div.innerHTML = `
+                <span>${item.name} - Quantity: ${item.quantity} - Type: ${item.type} - Tags: ${item.tags.join(', ')}</span>
+                <button class="remove-from-cart" data-index="${index}">Remove</button>
             `;
-            cartList.appendChild(row);
+            cartList.appendChild(div);
         });
     }
 
@@ -377,48 +393,6 @@ document.addEventListener('DOMContentLoaded', function () {
         displayCustomerOrders();
     }
     
-
-    // function checkout() {
-    //     const date = orderDateInput.value;
-    //     if (!date) {
-    //         alert('Please select a date.');
-    //         return;
-    //     }
-
-    //     const orders = cart.map(item => ({
-    //         ...item,
-    //         date
-    //     }));
-
-    //     let customers = getCustomers();
-    //     customers.forEach(customer => {
-    //         customer.orders = customer.orders || [];
-    //         customer.orders.push(...orders);
-    //     });
-    //     saveCustomers(customers);
-    //     cart = [];
-    //     saveInventory(getInventory()); // Update inventory with remaining quantities
-    //     displayCart();
-    //     displayCustomerOrders();
-    // }
-
-    // function displayCustomers() {
-    //     customerList.innerHTML = '';
-    //     let customers = getCustomers();
-    //     customers.forEach((customer, index) => {
-    //         const row = document.createElement('tr');
-    //         row.innerHTML = `
-    //             <td>${customer.name}</td>
-    //             <td>${customer.address}</td>
-    //             <td>${customer.mobile}</td>
-    //             <td>
-    //                 <button class="remove" data-index="${index}">Remove</button>
-    //             </td>
-    //         `;
-    //         customerList.appendChild(row);
-    //     });
-    // }
-
     function displayCustomers() {
         customerList.innerHTML = '';
         const customerSelect = document.getElementById('customer-select');
@@ -443,23 +417,6 @@ document.addEventListener('DOMContentLoaded', function () {
             customerSelect.appendChild(option);
         });
     }
-
-    function displayCart() {
-        const cartList = document.getElementById('cart-list');
-        cartList.innerHTML = ''; // Clear existing content
-    
-        cart.forEach((item, index) => {
-            const div = document.createElement('div');
-            div.className = 'cart-item';
-            div.innerHTML = `
-                <span>${item.name} - Quantity: ${item.quantity} - Type: ${item.type} - Tags: ${item.tags.join(', ')}</span>
-                <button class="remove-from-cart" data-index="${index}">Remove</button>
-            `;
-            cartList.appendChild(div);
-        });
-    }
-    
-    
 
     function displayCustomerOrders() {
         customerOrdersList.innerHTML = '';
