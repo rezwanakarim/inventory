@@ -1,4 +1,4 @@
-# inventory-system
+# inventory
 
 ## Overview
 A web-based application for managing inventory, customers, and orders. Users can add, update, and delete inventory items, manage customer details, and process orders through a shopping cart. It includes filtering options and data export functionality to CSV files.
