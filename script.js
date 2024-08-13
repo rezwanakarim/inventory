@@ -18,10 +18,10 @@ document.addEventListener('DOMContentLoaded', function () {
     const orderDateInput = document.getElementById('order-date');
     const customerSelect = document.getElementById('customer-select');
 
-    document.getElementById('export-inventory').addEventListener('click', exportInventoryToExcel);
     document.getElementById('export-customers').addEventListener('click', exportCustomersToExcel);
 
     let cart = [];
+    cart = getCart();
 
     tagForm.addEventListener('submit', addTag);
     typeForm.addEventListener('submit', addType);
@@ -188,7 +188,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function removeTag(e) {
-        if (e.target.classList.contains('remove-tag')) {  // Check for 'remove-tag' class
+        if (e.target.classList.contains('remove-tag')) {
             const index = e.target.getAttribute('data-index');
             let tags = getTags();
             tags.splice(index, 1);
@@ -199,7 +199,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function removeType(e) {
-        if (e.target.classList.contains('remove-type')) {  // Check for 'remove-type' class
+        if (e.target.classList.contains('remove-type')) {
             const index = e.target.getAttribute('data-index');
             let types = getTypes();
             types.splice(index, 1);
@@ -342,8 +342,62 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }
 
+    function saveCart(cart) {
+        localStorage.setItem('cart', JSON.stringify(cart));
+    }
+
+    function getCart() {
+        const cart = localStorage.getItem('cart');
+        return cart ? JSON.parse(cart) : [];
+    }
+
+    function addToCart(index, quantity) {
+        let inventory = getInventory();
+        let product = inventory[index];
+        if (product.quantity >= quantity) {
+            cart.push({ ...product, quantity });
+            product.quantity -= quantity;
+            saveInventory(inventory);
+            saveCart(cart); // Save cart to local storage
+            displayCart();
+            displayInventory();
+        } else {
+            alert('Not enough quantity available.');
+        }
+    }
+
+    function removeFromCart(index) {
+        // Retrieve the item to be removed from the cart
+        const item = cart[index];
+
+        // Add the item's quantity back to the inventory
+        let inventory = getInventory();
+        let existingProduct = inventory.find(product =>
+            product.name === item.name &&
+            product.type === item.type &&
+            item.tags.every(tag => product.tags.includes(tag)) &&
+            product.tags.length === item.tags.length
+        );
+
+        if (existingProduct) {
+            existingProduct.quantity += item.quantity;
+        } else {
+            // If the product does not exist in inventory, add it
+            inventory.push({ ...item, quantity: item.quantity });
+        }
+
+        saveInventory(inventory); // Update inventory in local storage
+
+        // Remove the item from the cart
+        cart.splice(index, 1);
+        saveCart(cart); // Save updated cart to local storage
+
+        displayCart(); // Refresh cart display
+        displayInventory(); // Refresh inventory display
+    }
+
     function displayCart() {
-        cartList.innerHTML = ''; // Clear existing content
+        cartList.innerHTML = '';
 
         cart.forEach((item, index) => {
             const div = document.createElement('div');
@@ -354,52 +408,85 @@ document.addEventListener('DOMContentLoaded', function () {
             `;
             cartList.appendChild(div);
         });
-    }
 
+        // Add event listener for the remove buttons
+        document.querySelectorAll('.remove-from-cart').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const index = e.target.dataset.index;
+                removeFromCart(index);
+            });
+        });
+    }
 
     function checkout() {
-    const date = orderDateInput.value;
-    const customerIndex = customerSelect.value;
-
-    if (!date) {
-        alert('Please select a date.');
-        return;
-    }
-
-    if (customerIndex === '') {
-        alert('Please select a customer.');
-        return;
-    }
-
-    const customers = getCustomers();
-    const selectedCustomer = customers[customerIndex];
-    if (!selectedCustomer) {
-        alert('Selected customer not found.');
-        return;
-    }
-
-    const order = {
-        customer: selectedCustomer,
-        items: cart.map(item => ({
-            name: item.name,
-            quantity: item.quantity
-        })),
-        date: date
-    };
-
-    // Get existing orders or create a new array
-    const existingOrders = JSON.parse(localStorage.getItem('orders')) || [];
-    existingOrders.push(order);
-    localStorage.setItem('orders', JSON.stringify(existingOrders));
-
-    cart = [];
-    saveInventory(getInventory()); // Update inventory with remaining quantities
-    displayCart();
-    displayCustomerOrders();
-}
-
+        const date = orderDateInput.value;
+        const customerIndex = customerSelect.value;
     
-
+        if (!date) {
+            alert('Please select a date.');
+            return;
+        }
+    
+        if (customerIndex === '') {
+            alert('Please select a customer.');
+            return;
+        }
+    
+        const customers = getCustomers();
+        const selectedCustomer = customers[customerIndex];
+        if (!selectedCustomer) {
+            alert('Selected customer not found.');
+            return;
+        }
+    
+        const order = {
+            customer: selectedCustomer,
+            items: cart.map(item => ({
+                name: item.name,
+                quantity: item.quantity
+            })),
+            date: date
+        };
+    
+        // Get existing orders or create a new array
+        const existingOrders = JSON.parse(localStorage.getItem('orders')) || [];
+        existingOrders.push(order);
+        localStorage.setItem('orders', JSON.stringify(existingOrders));
+    
+        // Update inventory by reducing quantities of checked-out items
+        let inventory = getInventory();
+        cart.forEach(item => {
+            let existingProduct = inventory.find(product =>
+                product.name === item.name &&
+                product.type === item.type &&
+                item.tags.every(tag => product.tags.includes(tag)) &&
+                product.tags.length === item.tags.length
+            );
+    
+            if (existingProduct) {
+                existingProduct.quantity -= item.quantity;
+                if (existingProduct.quantity <= 0) {
+                    // Remove product from inventory if quantity is zero or less
+                    inventory = inventory.filter(product =>
+                        !(product.name === item.name &&
+                          product.type === item.type &&
+                          item.tags.every(tag => product.tags.includes(tag)) &&
+                          product.tags.length === item.tags.length)
+                    );
+                }
+            }
+        });
+    
+        saveInventory(inventory); 
+    
+        cart = [];
+        saveCart(cart); 
+    
+        displayCart(); 
+        displayInventory(); 
+        displayCustomerOrders(); 
+    }
+    
     function displayCustomers() {
         customerList.innerHTML = '';
         customerSelect.innerHTML = '<option value="">Select a customer</option>';
@@ -442,23 +529,23 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         });
     }
-    
+
     function displayCustomerOrders() {
         const customerOrdersList = document.getElementById('order-list'); // Make sure this element exists in your HTML
         if (!customerOrdersList) {
             console.error('Element with ID "order-list" not found.');
             return;
         }
-        
+
         customerOrdersList.innerHTML = '';
         let customers = getCustomers();
-        
+
         customers.forEach(customer => {
             if (customer.orders) {
                 customer.orders.forEach((order, orderIndex) => {
                     const row = document.createElement('tr');
                     const totalQuantity = order.quantity; // Assuming order has a quantity property
-    
+
                     row.innerHTML = `
                         <td>${customer.name}</td>
                         <td>${totalQuantity}</td>
@@ -468,12 +555,12 @@ document.addEventListener('DOMContentLoaded', function () {
                             <button class="details-order" data-customer-index="${customers.indexOf(customer)}" data-order-index="${orderIndex}">Details</button>
                         </td>
                     `;
-    
+
                     customerOrdersList.appendChild(row);
                 });
             }
         });
-    
+
         // Add event listeners for the buttons
         document.querySelectorAll('.remove-order').forEach(button => {
             button.addEventListener('click', (e) => {
@@ -482,7 +569,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 removeOrder(customerIndex, orderIndex);
             });
         });
-    
+
         document.querySelectorAll('.details-order').forEach(button => {
             button.addEventListener('click', (e) => {
                 const customerIndex = e.target.dataset.customerIndex;
@@ -491,7 +578,7 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         });
     }
-    
+
     // Function to remove an order
     function removeOrder(customerIndex, orderIndex) {
         let customers = getCustomers();
@@ -501,42 +588,24 @@ document.addEventListener('DOMContentLoaded', function () {
             displayCustomerOrders(); // Refresh the order list display
         }
     }
-    
+
     // Function to show order details
     function showOrderDetails(customerIndex, orderIndex) {
         let customers = getCustomers();
         const order = customers[customerIndex].orders[orderIndex];
         alert(`Order Details:\nCustomer: ${customers[customerIndex].name}\nDate: ${order.date}\nItems:\n${order.name}: ${order.quantity}`);
     }
-    
-    function exportInventoryToExcel() {
-        const inventory = getInventory();
-        const csvContent = "data:text/csv;charset=utf-8,"
-            + ["Product Name,Quantity,Type,Tags"]
-            .concat(inventory.map(product =>
-                [product.name, product.quantity, product.type, product.tags.join(', ')].join(',')
-            ))
-            .join("\n");
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "inventory.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
 
     function exportCustomersToExcel() {
         const customers = getCustomers();
         const csvContent = "data:text/csv;charset=utf-8,"
-            + ["Customer Name,Address,Mobile,Orders"]
-            .concat(customers.map(customer => {
-                const orders = customer.orders ? customer.orders.map(order =>
-                    `[${order.name}: ${order.quantity} on ${order.date}]`).join(' | ') : '';
-                return [customer.name, customer.address, customer.mobile, orders].join(',');
-            }))
-            .join("\n");
+            + ["Customer Name,Address,Mobile"]
+                .concat(customers.map(customer => {
+                    const orders = customer.orders ? customer.orders.map(order =>
+                        `[${order.name}: ${order.quantity} on ${order.date}]`).join(' | ') : '';
+                    return [customer.name, customer.address, customer.mobile, orders].join(',');
+                }))
+                .join("\n");
 
         const encodedUri = encodeURI(csvContent);
         const link = document.createElement("a");
@@ -546,4 +615,5 @@ document.addEventListener('DOMContentLoaded', function () {
         link.click();
         document.body.removeChild(link);
     }
+
 });
