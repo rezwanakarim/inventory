@@ -23,5 +23,5 @@ A web-based application for managing inventory, customers, and orders. Users can
 - Export data to CSV files.
 
 ## Live Demo
-[GitHub Pages](https://rezwanakarim.github.io/inventory-system/)
+[GitHub Pages](https://rezwanakarim.github.io/inventory)
 
